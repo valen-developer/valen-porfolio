@@ -1,0 +1,85 @@
+name: deploy to production
+
+on:
+  push:
+    branches:
+      - production
+    tags:
+      - production
+
+env:
+  registry_username: ${{ secrets.REGISTRY_USERNAME }}
+  registry_password: ${{ secrets.REGISTRY_PASSWORD }}
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Build the app
+      - name: Build webapp
+        run: docker build -t valentinportfolio --file Dockerfile .
+
+      # login to github docker registry
+      - name: Login to docker registry
+        run: docker login https://ghcr.io -u ${{ env.registry_username }} -p ${{ env.registry_password }}
+
+      # tag the image
+      - name: Tag image webapp
+        run: docker tag valentinportfolio ghcr.io/${{ env.registry_username }}/valentinportfolio:latest
+
+
+      # push the image to the registry
+      - name: Push webapp image
+        run: docker push ghcr.io/${{ env.registry_username }}/valentinportfolio:latest
+
+      # logout of github docker registry
+      - name: Logout of docker registry
+        run: docker logout
+
+  deploy:
+    runs-on: self-hosted
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v3
+
+      # login to github docker registry
+      - name: Login to docker registry
+        run: docker login https://ghcr.io -u ${{ env.registry_username }} -p ${{ env.registry_password }}
+
+      # get the image from the registry
+      # get webapp image
+      - name: Get image from registry
+        run: docker pull ghcr.io/${{ env.registry_username }}/valentinportfolio:latest
+
+      # tag the image
+      - name: Tag webapp image
+        run: docker tag ghcr.io/${{ env.registry_username }}/valentinportfolio:latest valentinportfolio:latest
+
+      # run containers
+      - name: Build containers
+        run: docker compose up -d
+
+      # logout of github docker registry
+      - name: Logout of docker registry
+        run: docker logout
+
+  cleanresitry:
+    runs-on: self-hosted
+    needs:
+      - deploy
+    steps:
+      # login to github docker registry
+      - name: Login to docker registry
+        run: docker login https://ghcr.io -u ${{ env.registry_username }} -p ${{ env.registry_password }}
+
+      # clean the registry
+      - name: Clean registry
+        run: docker rmi $(docker images -q -f dangling=true)
+
+      # logout of github docker registry
+      - name: Logout of docker registry
+        run: docker logout
