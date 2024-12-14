@@ -23,7 +23,7 @@ jobs:
 
       # Build the app
       - name: Build webapp
-        run: docker build -t valenporfolio --file Dockerfile.app .
+        run: docker build -t valenporfolio --file Dockerfile .
 
       # login to github docker registry
       - name: Login to docker registry
