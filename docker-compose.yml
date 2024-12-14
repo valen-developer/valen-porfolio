@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.valenporfolio.rule=Host(`valentinvalverde.com`)"
+      - "traefik.http.routers.valenporfolio.rule=Host(`valentinvalverde.com`) || Host(`www.valentinvalverde.com`)"
       - "traefik.http.routers.valenporfolio.entrypoints=websecure"
       - "traefik.http.routers.valenporfolio.tls.certresolver=myresolver"
       - "traefik.docker.network=nextcloud_nextcloud_network"
