@@ -73,7 +73,7 @@ jobs:
 
       # run containers
       - name: Build containers
-        run: docker-compose -f docker-compose.yml up -d
+        run: docker compose -f docker-compose.yml up -d
 
       # logout of github docker registry
       - name: Logout of docker registry
