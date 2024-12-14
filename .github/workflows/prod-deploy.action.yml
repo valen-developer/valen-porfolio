@@ -1,16 +1,19 @@
-name: deploy to production
+
+
+name: deploy-production
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - production
     tags:
+      - porfolio
       - production
 
 env:
   registry_username: ${{ secrets.REGISTRY_USERNAME }}
   registry_password: ${{ secrets.REGISTRY_PASSWORD }}
-
 
 jobs:
   build:
@@ -20,7 +23,7 @@ jobs:
 
       # Build the app
       - name: Build webapp
-        run: docker build -t valentinportfolio --file Dockerfile .
+        run: docker build -t valenporfolio --file Dockerfile.app .
 
       # login to github docker registry
       - name: Login to docker registry
@@ -28,16 +31,16 @@ jobs:
 
       # tag the image
       - name: Tag image webapp
-        run: docker tag valentinportfolio ghcr.io/${{ env.registry_username }}/valentinportfolio:latest
-
+        run: docker tag valenporfolio ghcr.io/${{ env.registry_username }}/valenporfolio:latest
 
       # push the image to the registry
       - name: Push webapp image
-        run: docker push ghcr.io/${{ env.registry_username }}/valentinportfolio:latest
+        run: docker push ghcr.io/${{ env.registry_username }}/valenporfolio:latest
 
       # logout of github docker registry
       - name: Logout of docker registry
         run: docker logout
+
 
   deploy:
     runs-on: self-hosted
@@ -53,15 +56,16 @@ jobs:
       # get the image from the registry
       # get webapp image
       - name: Get image from registry
-        run: docker pull ghcr.io/${{ env.registry_username }}/valentinportfolio:latest
+        run: docker pull ghcr.io/${{ env.registry_username }}/valenporfolio:latest
+
 
       # tag the image
       - name: Tag webapp image
-        run: docker tag ghcr.io/${{ env.registry_username }}/valentinportfolio:latest valentinportfolio:latest
+        run: docker tag ghcr.io/${{ env.registry_username }}/valenporfolio:latest valenporfolio:latest
 
       # run containers
       - name: Build containers
-        run: docker compose up -d
+        run: docker-compose -f docker-compose.yml up -d
 
       # logout of github docker registry
       - name: Logout of docker registry
