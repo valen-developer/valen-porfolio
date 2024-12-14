@@ -5,8 +5,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`valentinvalverde.com`)"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.tls.certresolver=myresolver"
     expose:
       - 8080
     ports:
       - 8000:8080
+    networks:
+      - nextcloud_network
     restart: always
+
+networks:
+  nextcloud_network:
+    external: true
