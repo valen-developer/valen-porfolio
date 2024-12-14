@@ -1,5 +1,3 @@
-
-
 name: deploy-production
 
 on:
@@ -25,30 +23,46 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Build the app
+      # Build webapp
       - name: Build webapp
         run: npm run build
 
-      # Build the app docker image
-      - name: Build webapp
-        run: docker build -t valenporfolio --file Dockerfile .
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
 
-      # login to github docker registry
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
       - name: Login to docker registry
-        run: docker login https://ghcr.io -u ${{ env.registry_username }} -p ${{ env.registry_password }}
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ env.registry_username }}
+          password: ${{ env.registry_password }}
 
-      # tag the image
+      - name: Build webapp
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: false
+          tags: valenporfolio:latest
+          outputs: type=docker,dest=/tmp/valenporfolio.tar
+
+      - name: Load image
+        run: |
+          docker load --input /tmp/valenporfolio.tar
+          docker image ls -a
+
       - name: Tag image webapp
-        run: docker tag valenporfolio ghcr.io/${{ env.registry_username }}/valenporfolio:latest
+        run: docker tag valenporfolio:latest ghcr.io/${{ env.registry_username }}/valenporfolio:latest
 
-      # push the image to the registry
       - name: Push webapp image
         run: docker push ghcr.io/${{ env.registry_username }}/valenporfolio:latest
 
-      # logout of github docker registry
       - name: Logout of docker registry
         run: docker logout
-
 
   deploy:
     runs-on: self-hosted
@@ -57,41 +71,39 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # login to github docker registry
       - name: Login to docker registry
-        run: docker login https://ghcr.io -u ${{ env.registry_username }} -p ${{ env.registry_password }}
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ env.registry_username }}
+          password: ${{ env.registry_password }}
 
-      # get the image from the registry
-      # get webapp image
       - name: Get image from registry
         run: docker pull ghcr.io/${{ env.registry_username }}/valenporfolio:latest
 
-
-      # tag the image
       - name: Tag webapp image
         run: docker tag ghcr.io/${{ env.registry_username }}/valenporfolio:latest valenporfolio:latest
 
-      # run containers
       - name: Build containers
         run: docker compose -f docker-compose.yml up -d
 
-      # logout of github docker registry
       - name: Logout of docker registry
         run: docker logout
 
-  cleanresitry:
+  cleanregistry:
     runs-on: self-hosted
     needs:
       - deploy
     steps:
-      # login to github docker registry
       - name: Login to docker registry
-        run: docker login https://ghcr.io -u ${{ env.registry_username }} -p ${{ env.registry_password }}
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ env.registry_username }}
+          password: ${{ env.registry_password }}
 
-      # clean the registry
       - name: Clean registry
         run: docker rmi $(docker images -q -f dangling=true)
 
-      # logout of github docker registry
       - name: Logout of docker registry
         run: docker logout
