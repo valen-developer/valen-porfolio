@@ -3,7 +3,7 @@ import './App.css';
 function App() {
   return (
     <>
-      <h1>Valentín Valverde Romero</h1>
+      <h1>Valentín Valverde</h1>
     </>
   );
 }
