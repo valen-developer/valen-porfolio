@@ -15,9 +15,9 @@ services:
     expose:
       - 8080
     networks:
-      - nextcloud_nextcloud_network
+      - config_nextcloud_network
     restart: always
 
 networks:
-  nextcloud_nextcloud_network:
+  config_nextcloud_network:
     external: true
